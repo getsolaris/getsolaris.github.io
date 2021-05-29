@@ -82,7 +82,7 @@ tags: [company]
 
 서류전형에 합격한 뒤, 대부분의 회사는 1차 인터뷰 -> 2차 인터뷰 -> 최종 합격 순으로 진행됩니다.
 
-앞서, 인터뷰를 시작하기 전에 HR 매니저님이 마시고 싶은 음료를 제게 묻자 "저는 물이면 됩니다." 라고 말씀을 드렸습니다. 아임웹 자체 컵 홀더에 얼음을 많이 담아서 주셨다 ! **감사합니다 (__)**
+앞서, 인터뷰를 시작하기 전에 HR 매니저님이 마시고 싶은 음료를 제게 묻자 "저는 물이면 됩니다." 라고 답변을 드렸더니 매니저님께서 아임웹 자체 컵 홀더에 얼음을 많이 담아서 주셨다 ! **감사합니다 (__)**
 
 <img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/master/assets/images/post/pick-my-company/%EB%A9%B4%EC%A0%91%EB%AC%BC.png">
 
