@@ -17,7 +17,9 @@ body {
 }
 
 img {
- border: 5px solid black; 
+   -webkit-box-shadow: 0 20px 40px 0 rgb(212 216 229 / 80%); */
+   border-radius: 4px;
+   box-shadow: 0 20px 40px 0 rgb(212 216 229 / 80%);
 }
 
 .content-container {
