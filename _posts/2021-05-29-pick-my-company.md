@@ -15,7 +15,7 @@ tags: [company]
 
 <img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/master/assets/images/post/pick-my-company/%EC%A0%84%EC%97%AD.png">
 
-안녕하세요. 저는 21년 5월 둘째 주에 전력을 한 뒤 삶의 질 향상을 위해 휴식을 취하고 있었습니다.
+안녕하세요. 저는 21년 5월 둘째 주에 전역을 한 뒤 삶의 질 향상을 위해 휴식을 취하고 있었습니다.
 
 필자는 개발을 좋아해서 군에서 잘하지 못했던 개발을 전역 후 다시 시작했고 이전과 같이 회사에 다니며 성장을 하고 싶었습니다.
 
