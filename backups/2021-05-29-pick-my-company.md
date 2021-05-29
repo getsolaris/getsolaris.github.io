@@ -60,9 +60,11 @@ tags: [company]
 <img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/master/assets/images/post/pick-my-company/%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%A7%B5.png">
 
 
-제가 최종 합격한 회사는 대중교통 기준으로 왕복 4시간 정도의 자택이랑은 매우 먼 거리였습니다.
+최종 합격한 회사는 대중교통 기준으로 왕복 4시간 정도의 자택이랑은 매우 먼 거리였습니다.
+앞서 말했던 왕복 3시간 30분 이상의 회사라면 최종합격을 받아도 선뜻 해당 회사에 입사하기 힘들 것 같습니다.
 
 > 하지만 예외는 반드시 있습니다.
+
 
 그리고 가장 중요한 근무할 회사의 `혜택 및 복지` 를 살펴봅니다.
 
@@ -70,10 +72,10 @@ tags: [company]
 
 필자는 흔히 말하는 `워라밸` 을 중요하게 여기며, 모든 사람들이 회사의 복지를 한 눈에 봤을 때 입사하고 싶은, 문화가 좋은 회사를 원했습니다. 
 
-이렇기에 서로의 니즈가 맞는 회사를 찾는 일은 쉽지 않았습니다.
 
 <img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/master/assets/images/post/pick-my-company/%EC%9B%8C%EB%9D%BC%EB%B0%B82.jpg">
 
+이렇기에 서로의 니즈가 맞는 회사를 찾는 일은 쉽지 않았습니다.
 
 
 ## 회사 면접보기
@@ -115,7 +117,7 @@ tags: [company]
 
 
 그리고 3일이 지난 뒤, 입사 관련 메일을 받게 되었습니다.
-기대에 부푼 나머지 이메일을 열어봤다 ! 귀여운 강아지가 나를 반겼다.
+기대에 부푼 나머지 이메일을 열어봤다 ! 귀여운 강아지가 나를 반겼다. (멍멍아 안녕 !)
 
 <img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/master/assets/images/post/pick-my-company/%EC%9D%B4%EB%A9%94%EC%9D%BC2.png">
 
