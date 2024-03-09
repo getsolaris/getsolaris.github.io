@@ -11,11 +11,10 @@ tags: [Elasticsearch, reindex, index_template]
 
 ## 소개
 
-현재 가상의 인덱스에 엄청난 양의 데이터(수억 건)를 한 인덱스(테이블)에 저장하고 있으며,
-이를 더 효율적으로 관리하기 위한 전략을 도입하고자 합니다.
+하나의 인덱스(테이블)에 수억건의 데이터를 저장하고 있으며, 이를 더 효율적으로 관리하기 위한 전략을 도입하고자 합니다.
 
-이번 글에서는 날짜별로 데이터를 관리하는 `Index Rolling` 방법과
-엘라스틱 서치(Elasticsearch)의 `Index Template` 기능을 활용하여 기존 데이터를 자동으로 색인하는 방법을 소개하고자 합니다.
+이번 글에서는 엘라스틱 서치(Elasticsearch)의 `Index Template` 기능을 활용하여
+날짜별로 데이터를 관리하는 `Index Rolling` 방법과 기존 데이터를 재색인(`reindex`) 하는 방법을 기록하고자 합니다.
 
 
 ---
@@ -23,7 +22,7 @@ tags: [Elasticsearch, reindex, index_template]
 
 ## 목표
 
-목표는 테스트용 `posts.v7` 인덱스에 저장된 데이터를 재색인하여 시간대별로 나누는 것입니다.
+테스트용 `posts.v7` 인덱스에 저장된 데이터를 재색인하여 시간대별로 나누는 것입니다.
 
 예를 들어, 2024년 03월 09일 13시 10분의 데이터는 `posts.v8-2024-03-09-13-10` 인덱스에,
 
@@ -149,9 +148,9 @@ GET posts.v7/_count
 ```
 
 재색인 API (`_reindex`) 를 이용하여
-`subject` 와 `@timestamp` 필드만 새로운 `posts.v8-2023-03-05-07-51` 의 인덱스로 재색인 하고자 합니다.
+`subject` 와 `@timestamp` 필드만 새로운 `posts.v8-2023-03-05-07-51` 의 인덱스로 재색인을 해보겠습니다.
 
-`wait_for_completion=false` 옵션은 이 프로세스를 백그라운드에서 실행하도록 설정합니다.
+`wait_for_completion=false` 옵션을 이용하여 프로세스를 백그라운드에서 실행하도록 설정합니다.
 
 https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html#docs-reindex-filter-source
 
@@ -179,7 +178,7 @@ POST _reindex?wait_for_completion=false
 }
 ```
 
-재색인 작업이 비동기적으로 진행되기 때문에, 작업이 완료되었는지 여부와 진행 상황을 확인하기 위해서는 반환된 task id를 사용합니다.
+재색인 작업이 비동기적으로 진행되기 때문에, 작업이 완료되었는지 여부와 진행 상황을 확인하기 위해서는 반환된 `task_id`를 사용합니다.
 아래는 작업 상태를 확인하는 방법입니다.
 
 ```
