@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>AWS CodeDeploy 파일 존재 배포 실패 에러 발생시 - getsolaris</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="The deployment failed because a specified file already exists at this location"><meta property="og:image" content><meta property="og:title" content="AWS CodeDeploy 파일 존재 배포 실패 에러 발생시"><meta property="og:description" content="The deployment failed because a specified file already exists at this location"><meta property="og:type" content="article"><meta property="og:url" content="https://getsolaris.kr/posts/2019-05-09-aws-codedeploy-trouble-shooting/"><meta property="article:published_time" content="2019-05-09T00:00:00+00:00"><meta property="article:modified_time" content="2019-05-09T00:00:00+00:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="AWS CodeDeploy 파일 존재 배포 실패 에러 발생시"><meta name=twitter:description content="The deployment failed because a specified file already exists at this location"><script src=https://getsolaris.krjs/feather.min.js></script><link href=https://getsolaris.kr/css/fonts.b685ac6f654695232de7b82a9143a46f9e049c8e3af3a21d9737b01f4be211d1.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=https://getsolaris.kr/css/main.14253267cc610757ce1a4fac8ce2f0c8e7436b11055452ada0aa470e49ea67d5.css><link id=darkModeStyle rel=stylesheet type=text/css href=https://getsolaris.kr/css/dark.f3a01c29baa85933d72cc9a4c907ef9d16c8b826da0e69f3a3466432dea0d176.css disabled></head><body><div class=content><header><div class=main><a href=https://getsolaris.kr>getsolaris</a></div><nav><a href=/>home</a>
+<a href=/about>about</a>
+<a href=https://github.com/getsolaris>github</a></nav></header><main><article><div class=title><h1 class=title>AWS CodeDeploy 파일 존재 배포 실패 에러 발생시</h1><div class=meta></div></div><section class=body><h2 id=introduction>Introduction</h2><blockquote><p>The deployment failed because a specified file already exists at this location</p></blockquote><p>AWS CodeDeploy 로 배포 시 <code>codedeploy-agent</code> 서버에 동일한 파일이 존재할 경우 위와 같은 에러가 발생합니다.
+라라벨 프로젝트를 자동 배포를 하기위해 TravisCI 를 이용해 CodeDeploy 로 배포를 진행 하려고 했는데 위와 같은 충돌에 해결법을 찾았습니다.
+참고로 CodeDeploy는 파일 덮어쓰기(<code>overwrite</code>)가 불가능 하다는것을 아래 래퍼런스 링크에서 확인 가능합니다. (AWS CodeDeploy GUI 수동 배포시 덮어쓰기 옵션 선택이 가능합니다.)</p><h2 id=solution>Solution</h2><p>배포 시 release 디렉터리에 배포 후 appspec hook 을 통해 스크립트를 실행 시킵니다.</p><blockquote><p>출처: AWS CodeDeploy appspec lifecycle</p></blockquote><p><code>afterInstall.bash</code> 를 실행 하게 되면 모든 파일을 제거하므로 반영에서 제외할 파일들은 따로 <code>release-files</code> 라는 디렉터리를 생성하여 넣어두고 <code>copy</code> 하는 형식을 추가했습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yml data-lang=yml><span style=color:#75715e># appspec.yml</span>
+
+<span style=color:#66d9ef>version</span>: <span style=color:#ae81ff>0.0</span>
+<span style=color:#66d9ef>os</span>: linux
+<span style=color:#66d9ef>files</span>:
+  - <span style=color:#66d9ef>source</span>: ./
+    <span style=color:#66d9ef>destination</span>: /var/www/release/
+<span style=color:#66d9ef>permissions</span>:
+  - <span style=color:#66d9ef>object</span>: /var/www/laravel-central-api/
+    <span style=color:#66d9ef>owner</span>: www-data
+    <span style=color:#66d9ef>group</span>: www-data
+<span style=color:#66d9ef>hooks</span>:
+  <span style=color:#66d9ef>BeforeInstall</span>:
+    - <span style=color:#66d9ef>location</span>: scripts/beforeInstall.bash
+  <span style=color:#66d9ef>AfterInstall</span>:
+    - <span style=color:#66d9ef>location</span>: scripts/afterInstall.bash
+</code></pre></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># beforeInstall.bash</span>
+
+<span style=color:#75715e>#!/usr/bin/env bash</span>
+<span style=color:#66d9ef>if</span> <span style=color:#f92672>[</span> -d /var/www/release <span style=color:#f92672>]</span>; <span style=color:#66d9ef>then</span>
+    sudo rm -rf /var/www/release
+<span style=color:#66d9ef>fi</span>
+sudo mkdir -vp /var/www/release
+</code></pre></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># afterInstall.bash</span>
+
+<span style=color:#75715e>#!/usr/bin/env bash</span>
+
+sudo rsync --delete-before --verbose --archive /var/www/release/ /var/www/laravel-central-api/ &gt; /var/log/deploy.log
+
+cd /var/www/laravel-central-api
+sudo composer install
+sudo cp /var/www/release-files/.env /var/www/laravel-central-api
+sudo cp /var/www/release-files/Controller.php /var/www/laravel-central-api/app/Http/Controllers
+sudo php artisan key:generate
+sudo php artisan config:cache
+sudo chmod -R <span style=color:#ae81ff>775</span> storage bootstrap/cache storage/framework storage/logs
+sudo chown -R $USER:www-data storage
+sudo chown -R $USER:www-data bootstrap/cache
+sudo pkill -9 -ef bot.php
+nohup php bot.php &gt; /dev/null 2&gt; /dev/null &lt; /dev/null &amp;
+
+<span style=color:#66d9ef>if</span> <span style=color:#f92672>[</span> -d /var/www/release <span style=color:#f92672>]</span>; <span style=color:#66d9ef>then</span>
+    sudo rm -rf /var/www/release
+<span style=color:#66d9ef>fi</span>
+</code></pre></div><h2 id=reference>Reference</h2><p><a href=https://github.com/aws/aws-codedeploy-agent/issues/14>https://github.com/aws/aws-codedeploy-agent/issues/14</a></p></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/aws>AWS</a></li></ul></nav></div></article></main><footer></footer><script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZQT5MYHN"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());gtag('config','G-QEZQT5MYHN');</script></div></body></html>
