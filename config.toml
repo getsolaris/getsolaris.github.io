@@ -1,0 +1,34 @@
+baseURL = "https://getsolaris.kr"
+languageCode = "ko-kr"
+title = "getsolaris"
+theme = "archie"
+copyright = "getsolaris"
+pygmentsstyle = "monokai"
+pygmentscodefences = true
+pygmentscodefencesguesssyntax = true
+paginate = 4
+
+[params]
+#favicon = "https://img.icons8.com/officel/16/000000/chevron-right.png"
+#og_image = "https://raw.githubusercontent.com/athul/archie/master/images/archie-dark.png"
+# mode = "auto"
+mode = "toggle"
+#useCDN = true
+subtitle = "Backend Engineer (PHP, Laravel, Elasticsearch - ELK)"
+description = "getsolaris blog"
+
+[[menu.main]]
+name = "home"
+url = "/"
+weight = 1
+
+[[menu.main]]
+name = "about"
+url = "/about"
+weight = 2
+
+
+[[menu.main]]
+name = "github"
+url = "https://github.com/getsolaris"
+weight = 3
