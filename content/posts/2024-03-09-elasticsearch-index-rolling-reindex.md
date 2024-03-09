@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 'Elasticsearch Index Rolling, reindex'
-description: 'Elasticsearch 색인 시 날짜별로 색인하기 (with Index Template, Reindex)'
+description: 'Elasticsearch 의 Index Rolling을 적용합니다. (with Index Template, reindex)'
 date: 2024-03-09
 draft: false
 author: getsolaris
@@ -24,9 +24,9 @@ tags: [Elasticsearch, reindex, index_template]
 
 테스트용 `posts.v7` 인덱스에 저장된 데이터를 재색인하여 시간대별로 나누는 것입니다.
 
-예를 들어, 2024년 03월 09일 13시 10분의 데이터는 `posts.v8-2024-03-09-13-10` 인덱스에,
+예를 들어, 2024년 03월 09일 13시 10분 ~ 13시 19분 59초까지의 데이터는 `posts.v8-2024-03-09-13-10` 인덱스에,
 
-20분의 데이터는 `posts.v8-2024-03-09-13-20` 인덱스에 저장합니다.
+20분 ~ 29분 59초까지의 데이터는 `posts.v8-2024-03-09-13-20` 인덱스에 저장합니다.
 
 
 ---
