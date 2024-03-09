@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Elasticsearch routing, routing shard - getsolaris</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Elasticsearch routing 에 대해 정리"><meta property="og:image" content><meta property="og:title" content="Elasticsearch routing, routing shard"><meta property="og:description" content="Elasticsearch routing 에 대해 정리"><meta property="og:type" content="article"><meta property="og:url" content="https://getsolaris.kr/posts/2024-03-09-elasticsearch-routing/"><meta property="article:published_time" content="2024-03-09T00:00:00+00:00"><meta property="article:modified_time" content="2024-03-09T00:00:00+00:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Elasticsearch routing, routing shard"><meta name=twitter:description content="Elasticsearch routing 에 대해 정리"><script src=https://getsolaris.krjs/feather.min.js></script><link href=https://getsolaris.kr/css/fonts.b685ac6f654695232de7b82a9143a46f9e049c8e3af3a21d9737b01f4be211d1.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=https://getsolaris.kr/css/main.14253267cc610757ce1a4fac8ce2f0c8e7436b11055452ada0aa470e49ea67d5.css><link id=darkModeStyle rel=stylesheet type=text/css href=https://getsolaris.kr/css/dark.f3a01c29baa85933d72cc9a4c907ef9d16c8b826da0e69f3a3466432dea0d176.css disabled></head><body><div class=content><header><div class=main><a href=https://getsolaris.kr>getsolaris</a></div><nav><a href=/>home</a>
+<a href=/about>about</a>
+<a href=https://github.com/getsolaris>github</a></nav></header><main><article><div class=title><h1 class=title>Elasticsearch routing, routing shard</h1><div class=meta></div></div><section class=body><h2 id=metadata-의-routing-이란->metadata 의 routing 이란 ?</h2><p><code>routing</code> 은 Elasticsearch 에서 색인된 문서를 검색할 때, 특정한 라우팅 값을 사용하여 검색을 수행하는 방법입니다.</p><p><strong>기본 <code>routing</code> 값은 문서의 <code>_id</code> 값이며, 이 값은 색인 시에 자동으로 생성됩니다.</strong></p><p><code>routing</code> 을 사용하면 특정한 샤드에만 검색을 수행할 수 있습니다.</p><p>이를 통해 실무에서 성능 향상 경험이 있었습니다.</p><hr><h2 id=색인-방법>색인 방법</h2><p><code>routing</code> 을 사용하는 방법은 다음과 같습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT test/_doc/1?routing=code20240101
+{
+  &#34;uid&#34;: &#34;test@naver.com&#34;
+}
+</code></pre></div><h2 id=조회-방법>조회 방법</h2><p>일반적인 조회 방법은 다음과 같습니다.</p><p><code>routing</code> 을 설정하지 않았다면, 엘라스틱 서치는 해당 문서가 어디에 있는지 모르기 때문에 모든 샤드에 대해 조회를 수행합니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>GET test/_search
+
+# response
+{
+    &#34;took&#34; : 30,
+    &#34;timed_out&#34; : false,
+    &#34;_shards&#34; : {
+        &#34;total&#34; : 18,
+        &#34;successful&#34; : 18,
+        &#34;skipped&#34; : 0,
+        &#34;failed&#34; : 0
+    },
+    .
+    .
+}
+</code></pre></div><p>하지만, <code>routing</code> 을 사용하여 조회를 하게되면 결과는 달라지게 됩니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>GET test/_search?routing=code20240101
+
+# response
+{
+    &#34;took&#34; : 1,
+    &#34;timed_out&#34; : false,
+    &#34;_shards&#34; : {
+        &#34;total&#34; : 1,
+        &#34;successful&#34; : 1,
+        &#34;skipped&#34; : 0,
+        &#34;failed&#34; : 0
+    },
+    .
+    .
+}
+</code></pre></div><p>문서가 색인된 샤드에 대해서만 조회를 수행하게 되어, 성능이 향상됩니다.</p><p>실제로 여러개의 샤드가 있는 경우 특정 code 가 code20240101 인 문서를 조회한다고 가정하면 <code>routing</code> 을 사용하지 않았을 때와 사용했을 때의 큰 차이를 확인할 수 있습니다.</p><p><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html>ES 공식 문서</a>를 확인하면 query 에서 routing 를 이용하여 검색과 여러개의 <code>routing</code> 을 이용한 검색에 대한 내용을 확인할 수 있습니다.</p><h2 id=logstash-를-통해-색인-시에-routing-설정하기>Logstash 를 통해 색인 시에 routing 설정하기</h2><p>필자는 Logstash 를 통해 Elasticsearch 에 색인을 수행하고 있습니다.</p><p>Logstash 의 elasticseach output plugin 을 통해 <code>routing</code> 을 설정하는 방법은 다음과 같습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>elasticsearch {
+    routing =&gt; &#34;%{[@metadata][_routing_id]}&#34;
+}
+</code></pre></div><h2 id=routing-설정-시-어느-샤드에-배치-되었는지-확인하는-방법>routing 설정 시 어느 샤드에 배치 되었는지 확인하는 방법</h2><p>특정 <code>routing</code> 값을 가진 문서가 어느 샤드에 배치되었는지 직접 확인하는 방법은 <code>_search_shards</code> API 를 이용하여 query parameter 로 <code>routing</code> 을 같이 넘기는 방법이 있다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>GET test/_search_shards?routing=code20240101
+
+# response
+{
+  &#34;test&#34; : {
+    &#34;shards&#34; : [
+      [
+        {
+          &#34;state&#34; : &#34;STARTED&#34;,
+          &#34;primary&#34; : true,
+          &#34;node&#34; : &#34;node1&#34;,
+          &#34;index&#34; : &#34;test&#34;,
+          &#34;shard&#34; : 0,
+          &#34;allocation_id&#34; : {
+            &#34;id&#34; : &#34;allocation_id&#34;
+          }
+        }
+      ]
+    ]
+  }
+}
+</code></pre></div><h2 id=reference>reference</h2><ul><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html>https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-routing-field.html</a></li><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shards.html>https://www.elastic.co/guide/en/elasticsearch/reference/current/search-shards.html</a></li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/elasticsearch>Elasticsearch</a></li><li><a href=/tags/logstash>Logstash</a></li><li><a href=/tags/routing>routing</a></li><li><a href=/tags/index>index</a></li><li><a href=/tags/shard>shard</a></li></ul></nav></div></article></main><footer></footer><script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZQT5MYHN"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());gtag('config','G-QEZQT5MYHN');</script></div></body></html>
