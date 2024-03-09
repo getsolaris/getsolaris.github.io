@@ -14,7 +14,7 @@ paginate = 4
 # mode = "auto"
 mode = "toggle"
 #useCDN = true
-subtitle = "Backend Engineer (PHP, Laravel, Elasticsearch - ELK)"
+subtitle = "이것 저것 적어보는 기술 블로그"
 description = "getsolaris blog"
 
 [[menu.main]]
