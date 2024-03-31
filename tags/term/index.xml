@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>term on getsolaris</title><link>https://getsolaris.kr/tags/term/</link><description>Recent content in term on getsolaris</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><copyright>getsolaris</copyright><lastBuildDate>Sun, 31 Mar 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://getsolaris.kr/tags/term/index.xml" rel="self" type="application/rss+xml"/><item><title>Elasticsearch token 과 term 에 대해 정리</title><link>https://getsolaris.kr/posts/2024-03-31-elasticsearch-token-and-term/</link><pubDate>Sun, 31 Mar 2024 00:00:00 +0000</pubDate><guid>https://getsolaris.kr/posts/2024-03-31-elasticsearch-token-and-term/</guid><description>들어가기 전에 Elasticsearch 에서 token 과 term 에 대해 정리합니다.
+이 두 용어는 검색 및 인덱싱 시에 중요한 역할을 합니다.
+서로 밀접하게 연관되어 있지만, 구체적인 의미와 사용 방법이 다르기 때문에 구분하여 정리하였습니다.
+Token Token 은 텍스트 데이터를 인덱싱하기 전에 텍스트를 나누는 단위입니다.
+예를 들어 Hello World 라는 문장을 분석기를 통해 처리하면 Hello 와 World 라는 두 개의 토큰이 생성됩니다.
+이 과정을 토큰화라고 하는데, 토큰화 과정은 Analyzer 를 통해 이루어집니다.</description></item></channel></rss>
