@@ -317,7 +317,7 @@ GET member-2025*/_search?routing=site_a
 
 
 ## 마지막 결론
-Parent-child 모델링은 같은 인덱스와 같은 샤드에 저장되어야 조회가 가능한 것 같습니다.
+Parent-child 모델링은 같은 인덱스와 같은 샤드에 저장되어야 조회가 가능합니다.
 
 
 ## reference
