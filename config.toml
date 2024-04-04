@@ -6,7 +6,7 @@ copyright = "getsolaris"
 pygmentsstyle = "monokai"
 pygmentscodefences = true
 pygmentscodefencesguesssyntax = true
-paginate = 4
+paginate = 10
 
 [params]
 #favicon = "https://img.icons8.com/officel/16/000000/chevron-right.png"
