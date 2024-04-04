@@ -1,0 +1,228 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Elasticsearch Parent-child 모델링에서 Index Rolling 테스트 - getsolaris</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Elasticsearch Parent-child, Index Rolling 적용 테스트"><meta property="og:image" content><meta property="og:title" content="Elasticsearch Parent-child 모델링에서 Index Rolling 테스트"><meta property="og:description" content="Elasticsearch Parent-child, Index Rolling 적용 테스트"><meta property="og:type" content="article"><meta property="og:url" content="https://getsolaris.kr/posts/2024-04-04-elasticsearch-parent-child-rolling/"><meta property="article:published_time" content="2024-04-04T00:00:00+00:00"><meta property="article:modified_time" content="2024-04-04T00:00:00+00:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Elasticsearch Parent-child 모델링에서 Index Rolling 테스트"><meta name=twitter:description content="Elasticsearch Parent-child, Index Rolling 적용 테스트"><script src=https://getsolaris.krjs/feather.min.js></script><link href=https://getsolaris.kr/css/fonts.b685ac6f654695232de7b82a9143a46f9e049c8e3af3a21d9737b01f4be211d1.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=https://getsolaris.kr/css/main.14253267cc610757ce1a4fac8ce2f0c8e7436b11055452ada0aa470e49ea67d5.css><link id=darkModeStyle rel=stylesheet type=text/css href=https://getsolaris.kr/css/dark.f3a01c29baa85933d72cc9a4c907ef9d16c8b826da0e69f3a3466432dea0d176.css disabled></head><body><div class=content><header><div class=main><a href=https://getsolaris.kr>getsolaris</a></div><nav><a href=/>home</a>
+<a href=/about>about</a>
+<a href=https://github.com/getsolaris>github</a></nav></header><main><article><div class=title><h1 class=title>Elasticsearch Parent-child 모델링에서 Index Rolling 테스트</h1><div class=meta></div></div><section class=body><h2 id=들어가기-전에>들어가기 전에</h2><p><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html>Parent-child</a> 모델링은 부모 문서와 자식 문서를 관계를 맺어서 저장하는 방식입니다.</p><p><code>Parent-child 모델링에서 Index Rolling 적용이 가능할까 ?</code> 라는 생각을 문득 하게 되어 실험을 해보려고 합니다.</p><p>다른 비정규화 방식이면 가능할 것 같지만, Parent-child 모델링은 부모 문서와 자식 문서를 관계를 맺어서 저장하는 방식이기 때문에 Index Rolling 적용이 가능할지 궁금합니다.</p><p>그 이유는 하나의 인덱스에 문서의 수가 많아지면, 인덱스의 크기가 커지게 되고, 검색 성능이 저하될 수 있어 Index Rolling 적용이 가능한지 테스트를 해봅니다.</p><h2 id=셋팅>셋팅</h2><ul><li>Elasticsearch 7.17.18<ul><li>master x3</li></ul></li><li>Kibana 7.17.18</li></ul><h2 id=시나리오>시나리오</h2><ol><li>회원은 202403 인덱스에 저장한다. (2024년 03월에 가입 했다고 가정)</li><li>회원 접속 정보는 202404 인덱스에 저장한다. (2024년 04월에 접속 했다고 가정)</li><li>202403 인덱스와 202404 인덱스를 멀티테넌시 검색으로 조회가 되는지 확인한다.</li></ol><h2 id=실험>실험</h2><ol><li>Parent-child 모델링을 적용한 인덱스를 생성합니다.
+여기서는 회원과 회원 접속 정보를 Parent-child 모델링으로 구성합니다.</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT member-202403
+{
+  &#34;settings&#34;: {
+    &#34;refresh_interval&#34;: &#34;5s&#34;, 
+    &#34;number_of_shards&#34;: 3,
+    &#34;number_of_replicas&#34;: 1
+  },
+  &#34;mappings&#34;: {
+    &#34;properties&#34;: {
+      &#34;site_code&#34;: {
+        &#34;type&#34;: &#34;keyword&#34;
+      },
+      &#34;member_code&#34;: {
+        &#34;type&#34;: &#34;keyword&#34;
+      },
+      &#34;connected_at&#34;: {
+        &#34;type&#34;: &#34;date&#34;
+      },
+      &#34;join_fields&#34;: {
+        &#34;type&#34;: &#34;join&#34;,
+        &#34;relations&#34;: {
+          &#34;member&#34;: &#34;connections&#34;
+        }
+      }
+    }
+  }
+}
+</code></pre></div><ul><li><code>number_of_shards</code> 는 현재 노드 수인 3개로 설정하였습니다.</li><li><code>number_of_replicas</code> 는 1로 설정하였습니다.</li></ul><p>그렇다면 샤드는 총 6개가 생성됩니다. (3개의 primary shard, 3개의 replica shard)</p><ol start=2><li>회원 정보를 색인합니다.</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT member-202403/_doc/member_aa?routing=site_a
+{
+  &#34;site_code&#34;: &#34;site_a&#34;,
+  &#34;member_code&#34;: &#34;member_aa&#34;,
+  &#34;join_fields&#34;: &#34;member&#34;
+}
+</code></pre></div><ol start=3><li>회원 접속 정보를 색인합니다.</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT member-202404/_doc/member_aa-2024-04-04?routing=site_a
+{
+  &#34;site_code&#34;: &#34;site_a&#34;,
+  &#34;member_code&#34;: &#34;member_aa&#34;,
+  &#34;connected_at&#34;: &#34;2024-04-04&#34;,
+   &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;connections&#34;,
+    &#34;parent&#34;: &#34;member_aa&#34;
+  }
+}
+</code></pre></div><ol start=4><li>조회 테스트</li></ol><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>GET member-2024*/_search?routing=site_a
+{
+  &#34;query&#34;: {
+    &#34;has_child&#34;: {
+      &#34;type&#34;: &#34;connections&#34;,
+      &#34;query&#34;: {
+        &#34;match_all&#34;: {}
+      }
+    }
+  }
+}
+
+{
+  &#34;took&#34; : 7,
+  &#34;timed_out&#34; : false,
+  &#34;_shards&#34; : {
+    &#34;total&#34; : 2,
+    &#34;successful&#34; : 2,
+    &#34;skipped&#34; : 0,
+    &#34;failed&#34; : 0
+  },
+  &#34;hits&#34; : {
+    &#34;total&#34; : {
+      &#34;value&#34; : 0,
+      &#34;relation&#34; : &#34;eq&#34;
+    },
+    &#34;max_score&#34; : null,
+    &#34;hits&#34; : [ ]
+  }
+}
+</code></pre></div><p>멀티테넌시와 <code>routing_id</code> 를 이용하여 인덱스를 조회하였습니다.
+인덱스가 다르면 <code>routing_id</code> 를 지정해도 다른 샤드에 저장되기 때문에 조회가 되지 않습니다.</p><p><code>member</code> 인덱스를 생성 후 테스트를 해보면 정상적으로 조회가 됩니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT member/_doc/member_aa?routing=site_a
+{
+  &#34;site_code&#34;: &#34;site_a&#34;,
+  &#34;member_code&#34;: &#34;member_aa&#34;,
+  &#34;join_fields&#34;: &#34;member&#34;
+}
+
+PUT member/_doc/member_aa-2024-04-04?routing=site_a
+{
+  &#34;site_code&#34;: &#34;site_a&#34;,
+  &#34;member_code&#34;: &#34;member_aa&#34;,
+  &#34;connected_at&#34;: &#34;2024-04-04&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;connections&#34;,
+    &#34;parent&#34;: &#34;member_aa&#34;
+  }
+}
+
+
+
+GET member/_search?routing=site_a
+{
+  &#34;query&#34;: {
+    &#34;has_child&#34;: {
+      &#34;type&#34;: &#34;connections&#34;,
+      &#34;query&#34;: {
+        &#34;match_all&#34;: {}
+      }
+    }
+  }
+}
+</code></pre></div><h2 id=결론>결론</h2><p>Parent-child 모델링은 Index Rolling 적용이 불가능한 것 같습니다. 부모와 자식이 동일한 샤드에 있어야 한다는 제약으로 <code>routing_id</code> 를 지정해도, 다른 인덱스에 있다면 다른 샤드에 저장되기 때문에 조회가 되지 않습니다.</p><h2 id=그렇다면>그렇다면</h2><p>샤드가 1개인 경우에는 성공할까 ? 라는 생각이 들었습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT member-202503
+{
+  &#34;settings&#34;: {
+    &#34;refresh_interval&#34;: &#34;5s&#34;, 
+    &#34;number_of_shards&#34;: 1,
+    &#34;number_of_replicas&#34;: 0
+  },
+  &#34;mappings&#34;: {
+    &#34;properties&#34;: {
+      &#34;site_code&#34;: {
+        &#34;type&#34;: &#34;keyword&#34;
+      },
+      &#34;member_code&#34;: {
+        &#34;type&#34;: &#34;keyword&#34;
+      },
+      &#34;connected_at&#34;: {
+        &#34;type&#34;: &#34;date&#34;
+      },
+      &#34;join_fields&#34;: {
+        &#34;type&#34;: &#34;join&#34;,
+        &#34;relations&#34;: {
+          &#34;member&#34;: &#34;connections&#34;
+        }
+      }
+    }
+  }
+}
+
+PUT member-202504
+{
+  &#34;settings&#34;: {
+    &#34;refresh_interval&#34;: &#34;5s&#34;, 
+    &#34;number_of_shards&#34;: 1,
+    &#34;number_of_replicas&#34;: 0
+  },
+  &#34;mappings&#34;: {
+    &#34;properties&#34;: {
+      &#34;site_code&#34;: {
+        &#34;type&#34;: &#34;keyword&#34;
+      },
+      &#34;member_code&#34;: {
+        &#34;type&#34;: &#34;keyword&#34;
+      },
+      &#34;connected_at&#34;: {
+        &#34;type&#34;: &#34;date&#34;
+      },
+      &#34;join_fields&#34;: {
+        &#34;type&#34;: &#34;join&#34;,
+        &#34;relations&#34;: {
+          &#34;member&#34;: &#34;connections&#34;
+        }
+      }
+    }
+  }
+}
+</code></pre></div><p>미래의 시점으로 인덱스를 생성하였습니다.
+생성 후 보니 <code>member-202503</code> 인덱스는 <code>master2</code> 노드에, <code>member-202504</code> 인덱스는 <code>master3</code> 노드에 저장되었습니다.</p><p>그렇다면 <code>member-202505</code> 인덱스의 Primary Shard 를 <code>master2</code> 로 옮긴 다음 다시 테스트를 해보겠습니다.</p><p>Elasticsearch 의 <a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-reroute.html>reroute API</a> 를 이용하여 Shard 를 이동시킬 수 있습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>POST /_cluster/reroute
+{
+  &#34;commands&#34;: [
+    {
+      &#34;move&#34;: {
+        &#34;index&#34;: &#34;member-202504&#34;, &#34;shard&#34;: 0,
+        &#34;from_node&#34;: &#34;master3&#34;, &#34;to_node&#34;: &#34;master2&#34;
+      }
+    }
+  ]
+}
+</code></pre></div><p>그 후 확인해보면 <code>master2</code> 로 이동 된 것을 확인했습니다.</p><p>이제 두개의 인덱스 모두 같은 노드의 0번째 Primary 샤드에 저장되었으니 데이터 색인 후 조회가 되는지 확인해보겠습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT member-202503/_doc/member_aa?routing=site_a
+{
+  &#34;site_code&#34;: &#34;site_a&#34;,
+  &#34;member_code&#34;: &#34;member_aa&#34;,
+  &#34;join_fields&#34;: &#34;member&#34;
+}
+
+
+PUT member-202504/_doc/member_aa-2025-04-04?routing=site_a
+{
+  &#34;site_code&#34;: &#34;site_a&#34;,
+  &#34;member_code&#34;: &#34;member_aa&#34;,
+  &#34;connected_at&#34;: &#34;2025-04-04&#34;,
+   &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;connections&#34;,
+    &#34;parent&#34;: &#34;member_aa&#34;
+  }
+}
+
+GET member-2025*/_search?routing=site_a
+{
+  &#34;query&#34;: {
+    &#34;has_child&#34;: {
+      &#34;type&#34;: &#34;connections&#34;,
+      &#34;query&#34;: {
+        &#34;match_all&#34;: {}
+      }
+    }
+  }
+}
+
+
+{
+  &#34;took&#34; : 6,
+  &#34;timed_out&#34; : false,
+  &#34;_shards&#34; : {
+    &#34;total&#34; : 2,
+    &#34;successful&#34; : 2,
+    &#34;skipped&#34; : 0,
+    &#34;failed&#34; : 0
+  },
+  &#34;hits&#34; : {
+    &#34;total&#34; : {
+      &#34;value&#34; : 0,
+      &#34;relation&#34; : &#34;eq&#34;
+    },
+    &#34;max_score&#34; : null,
+    &#34;hits&#34; : [ ]
+  }
+}
+
+</code></pre></div><p>그래도 조회가 되지 않습니다.</p><h2 id=마지막-결론>마지막 결론</h2><p>Parent-child 모델링은 같은 인덱스와 같은 샤드에 저장되어야 조회가 가능한 것 같습니다.</p><h2 id=reference>reference</h2><ul><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html>https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html</a></li><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-reroute.html>https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-reroute.html</a></li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/elasticsearch>Elasticsearch</a></li><li><a href=/tags/modeling>modeling</a></li><li><a href=/tags/parent-child>parent-child</a></li><li><a href=/tags/index-rolling>index-rolling</a></li></ul></nav></div></article></main><footer></footer><script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZQT5MYHN"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());gtag('config','G-QEZQT5MYHN');</script></div></body></html>
