@@ -2,7 +2,7 @@
 layout: post
 title: 'Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기'
 description: 'Elasticsearch Aggregation Query, Parent-child 모델링에서 집계 쿼리 사용하기'
-date: 2024-05-17
+date: 2024-05-16
 draft: false
 author: getsolaris
 tags: [Elasticsearch, parent-child, aggs, aggregations]
