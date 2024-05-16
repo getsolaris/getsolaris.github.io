@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>aggregations on getsolaris</title><link>https://getsolaris.kr/tags/aggregations/</link><description>Recent content in aggregations on getsolaris</description><generator>Hugo -- gohugo.io</generator><language>ko-kr</language><copyright>getsolaris</copyright><lastBuildDate>Thu, 16 May 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://getsolaris.kr/tags/aggregations/index.xml" rel="self" type="application/rss+xml"/><item><title>Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기</title><link>https://getsolaris.kr/posts/2024-05-16-elasticsearch-parent-child-aggs/</link><pubDate>Thu, 16 May 2024 00:00:00 +0000</pubDate><guid>https://getsolaris.kr/posts/2024-05-16-elasticsearch-parent-child-aggs/</guid><description>Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기 Elasticsearch 에서는 집계 (Aggregations) 쿼리를 제공합니다.
+이를 이용하여 데이터를 그룹화하거나 통계를 내는 등 다양한 분석을 수행할 수 있습니다.
+Elasticsearch 의 Parent-child 모델링에서 집계 쿼리를 사용하는 방법입니다.
+집계 쿼리란 ? Elasticsearch 의 공식 문서에서는 집계 쿼리를 다음과 같이 정의하고 있습니다. (번역본)
+집계는 데이터를 지표, 통계 또는 기타 분석으로 요약합니다. 집계는 다음과 같은 질문에 답하는 데 도움이 됩니다.
+내 웹사이트의 평균 로드 시간은 얼마나 됩니까?</description></item></channel></rss>

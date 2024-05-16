@@ -1,0 +1,181 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기 - getsolaris</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Elasticsearch Aggregation Query, Parent-child 모델링에서 집계 쿼리 사용하기"><meta property="og:image" content><meta property="og:title" content="Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기"><meta property="og:description" content="Elasticsearch Aggregation Query, Parent-child 모델링에서 집계 쿼리 사용하기"><meta property="og:type" content="article"><meta property="og:url" content="https://getsolaris.kr/posts/2024-05-16-elasticsearch-parent-child-aggs/"><meta property="article:published_time" content="2024-05-16T00:00:00+00:00"><meta property="article:modified_time" content="2024-05-16T00:00:00+00:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기"><meta name=twitter:description content="Elasticsearch Aggregation Query, Parent-child 모델링에서 집계 쿼리 사용하기"><script src=https://getsolaris.krjs/feather.min.js></script><link href=https://getsolaris.kr/css/fonts.b685ac6f654695232de7b82a9143a46f9e049c8e3af3a21d9737b01f4be211d1.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=https://getsolaris.kr/css/main.14253267cc610757ce1a4fac8ce2f0c8e7436b11055452ada0aa470e49ea67d5.css><link id=darkModeStyle rel=stylesheet type=text/css href=https://getsolaris.kr/css/dark.f3a01c29baa85933d72cc9a4c907ef9d16c8b826da0e69f3a3466432dea0d176.css disabled></head><body><div class=content><header><div class=main><a href=https://getsolaris.kr>getsolaris</a></div><nav><a href=/>home</a>
+<a href=/about>about</a>
+<a href=https://github.com/getsolaris>github</a></nav></header><main><article><div class=title><h1 class=title>Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기</h1><div class=meta></div></div><section class=body><h2 id=elasticsearch-parent-child-모델링에서-집계-쿼리-사용하기>Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기</h2><p>Elasticsearch 에서는 집계 (Aggregations) 쿼리를 제공합니다.</p><p>이를 이용하여 데이터를 그룹화하거나 통계를 내는 등 다양한 분석을 수행할 수 있습니다.</p><p>Elasticsearch 의 Parent-child 모델링에서 집계 쿼리를 사용하는 방법입니다.</p><h2 id=집계-쿼리란->집계 쿼리란 ?</h2><blockquote><p>Elasticsearch 의 공식 문서에서는 집계 쿼리를 다음과 같이 정의하고 있습니다. (번역본)</p></blockquote><p>집계는 데이터를 지표, 통계 또는 기타 분석으로 요약합니다. 집계는 다음과 같은 질문에 답하는 데 도움이 됩니다.</p><ul><li>내 웹사이트의 평균 로드 시간은 얼마나 됩니까?</li><li>거래량을 기준으로 볼 때 가장 가치 있는 고객은 누구입니까?</li><li>내 네트워크에서 대용량 파일로 간주되는 것은 무엇입니까?</li><li>각 제품 카테고리에는 몇 개의 제품이 있나요?</li></ul><p>Elasticsearch는 집계를 다음 세 가지 범주로 구성합니다.</p><ul><li>필드 값에서 합계 또는 평균과 같은 지표를 계산하는 지표 집계입니다.</li><li>필드 값, 범위 또는 기타 기준에 따라 문서를 버킷(빈이라고도 함)으로 그룹화하는 버킷 집계입니다.</li><li>문서나 필드 대신 다른 집계에서 입력을 받는 파이프라인 집계입니다.</li></ul><h2 id=시나리오>시나리오</h2><ol><li>회원이 있고, 회원은 여러 개의 주문을 가질 수 있습니다.
+2. 회원과 주문은 Parent-child 관계로 구성되어 있습니다.</li><li>회원 이메일에 <code>@naver.com</code> 이 포함된 회원의 총 주문 금액을 구한다.</li></ol><p>더욱 다양하게 집계 쿼리를 사용할 수 있지만 간단하게 위 시나리오를 예로 들어 집계 쿼리를 사용해봅니다.</p><h2 id=셋팅>셋팅</h2><ul><li>Elasticsearch 7.17.18<ul><li>master x3</li></ul></li><li>Kibana 7.17.18</li></ul><h2 id=인덱스-설정>인덱스 설정</h2><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT users
+{
+  &#34;settings&#34;: {
+    &#34;number_of_shards&#34;: 3,
+    &#34;number_of_replicas&#34;: 0
+  },
+  &#34;mappings&#34;: {
+    &#34;properties&#34;: {
+      &#34;email&#34;: {
+        &#34;type&#34;: &#34;text&#34;,
+        &#34;analyzer&#34;: &#34;standard&#34;
+      },
+      &#34;order_price&#34;: {
+        &#34;type&#34;: &#34;double&#34;
+      },
+      &#34;join_fields&#34;: {
+        &#34;type&#34;: &#34;join&#34;,
+        &#34;relations&#34;: {
+          &#34;user&#34;: &#34;orders&#34;
+        }
+      }
+    }
+  }
+}
+</code></pre></div><p>이메일을 앞 뒤로 나누어 검색하기 위해 <code>standard</code> 분석기를 사용하였습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>POST _analyze
+{
+  &#34;analyzer&#34;: &#34;standard&#34;,
+  &#34;text&#34;: &#34;test1@naver.com&#34;
+}
+
+
+# response
+{
+  &#34;tokens&#34; : [
+    {
+      &#34;token&#34; : &#34;test1&#34;,
+      &#34;start_offset&#34; : 0,
+      &#34;end_offset&#34; : 5,
+      &#34;type&#34; : &#34;&lt;ALPHANUM&gt;&#34;,
+      &#34;position&#34; : 0
+    },
+    {
+      &#34;token&#34; : &#34;naver.com&#34;,
+      &#34;start_offset&#34; : 6,
+      &#34;end_offset&#34; : 15,
+      &#34;type&#34; : &#34;&lt;ALPHANUM&gt;&#34;,
+      &#34;position&#34; : 1
+    }
+  ]
+}
+</code></pre></div><h2 id=bulk-유저-데이터-삽입>bulk 유저 데이터 삽입</h2><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT users/_doc/test1@naver.com?routing=naver.com
+{
+  &#34;email&#34;: &#34;test1@naver.com&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;user&#34;
+  }
+}
+
+PUT users/_doc/test2@naver.com?routing=naver.com
+{
+  &#34;email&#34;: &#34;test2@naver.com&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;user&#34;
+  }
+}
+
+PUT users/_doc/test3@naver.com?routing=naver.com
+{
+  &#34;email&#34;: &#34;test3@naver.com&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;user&#34;
+  }
+}
+
+PUT users/_doc/test11@gmail.com?routing=gmail.com
+{
+  &#34;email&#34;: &#34;test11@gmail.com&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;user&#34;
+  }
+}
+
+PUT users/_doc/test22@gmail.com?routing=gmail.com
+{
+  &#34;email&#34;: &#34;test22@gmail.com&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;user&#34;
+  }
+}
+
+PUT users/_doc/test111@abcd.com?routing=abcd.com
+{
+  &#34;email&#34;: &#34;test111@abcd.com&#34;,
+  &#34;join_fields&#34;: {
+    &#34;name&#34;: &#34;user&#34;
+  }
+}
+</code></pre></div><p>그 후 Elasticsearch 에서 아래와 같이 데이터가 삽입되었는지 확인합니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>GET users/_search
+</code></pre></div><p>총 6개의 데이터가 삽입되었습니다.</p><p>이제 주문 데이터를 삽입합니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>POST users/_bulk?routing=naver.com
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test1@naver.com&#34;}
+{&#34;order_price&#34;:100,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test1@naver.com&#34;}}
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test1@naver.com&#34;}
+{&#34;order_price&#34;:1000,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test1@naver.com&#34;}}
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test1@naver.com&#34;}
+{&#34;order_price&#34;:2510,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test1@naver.com&#34;}}
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test1@naver.com&#34;}
+{&#34;order_price&#34;:3000,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test1@naver.com&#34;}}
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test2@naver.com&#34;}
+{&#34;order_price&#34;:150000,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test2@naver.com&#34;}}
+
+POST users/_bulk?routing=gmail.com
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test11@gmail.com&#34;}
+{&#34;order_price&#34;:50000,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test11@gmail.com&#34;}}
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test22@gmail.com&#34;}
+{&#34;order_price&#34;:150000,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test22@gmail.com&#34;}}
+
+POST users/_bulk?routing=abcd.com
+{&#34;index&#34;:{},&#34;routing&#34;:&#34;test111@abcd.com&#34;}
+{&#34;order_price&#34;:3500,&#34;join_fields&#34;:{&#34;name&#34;:&#34;orders&#34;,&#34;parent&#34;:&#34;test111@abcd.com&#34;}}
+</code></pre></div><h2 id=navercom-이메일을-가진-회원의-총-주문-금액-구하기>@naver.com 이메일을 가진 회원의 총 주문 금액 구하기</h2><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>GET users/_search
+{
+  &#34;size&#34;: 0,
+  &#34;query&#34;: {
+    &#34;bool&#34;: {
+      &#34;must&#34;: [
+        {
+          &#34;match&#34;: {
+            &#34;email&#34;: &#34;@naver.com&#34;
+          }
+        }
+      ]
+    }
+  }, 
+  &#34;aggs&#34;: {
+    &#34;orders&#34;: {
+      &#34;children&#34;: {
+        &#34;type&#34;: &#34;orders&#34;
+      },
+      &#34;aggs&#34;: {
+        &#34;total_order_price&#34;: {
+          &#34;sum&#34;: {
+            &#34;field&#34;: &#34;order_price&#34;
+          }
+        }
+      }
+    }
+  }
+}
+
+# response
+{
+  &#34;took&#34; : 3,
+  &#34;timed_out&#34; : false,
+  &#34;_shards&#34; : {
+    &#34;total&#34; : 3,
+    &#34;successful&#34; : 3,
+    &#34;skipped&#34; : 0,
+    &#34;failed&#34; : 0
+  },
+  &#34;hits&#34; : {
+    &#34;total&#34; : {
+      &#34;value&#34; : 3,
+      &#34;relation&#34; : &#34;eq&#34;
+    },
+    &#34;max_score&#34; : null,
+    &#34;hits&#34; : [ ]
+  },
+  &#34;aggregations&#34; : {
+    &#34;orders&#34; : {
+      &#34;doc_count&#34; : 5,
+      &#34;total_order_price&#34; : {
+        &#34;value&#34; : 156610.0
+      }
+    }
+  }
+}
+</code></pre></div><p>총 6명의 회원이 있지만, <code>@naver.com</code> 이메일을 가진 회원은 3명입니다.</p><h2 id=정리>정리</h2><ol><li><code>must</code> 절에 <code>match</code> 쿼리를 사용하여 standard 분석기에 분리된 term 중 <code>@naver.com</code> 이 포함된 회원을 검색합니다.</li><li><code>children</code> 집계를 사용하여 <code>orders</code> 타입의 자식 문서를 검색합니다.</li><li><code>sum</code> 집계를 사용하여 <code>order_price</code> 필드의 총 합계를 구합니다.</li></ol><h2 id=reference>Reference</h2><ul><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations.html>Elasticsearch Aggregations</a></li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/elasticsearch>Elasticsearch</a></li><li><a href=/tags/parent-child>parent-child</a></li><li><a href=/tags/aggs>aggs</a></li><li><a href=/tags/aggregations>aggregations</a></li></ul></nav></div></article></main><footer></footer><script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZQT5MYHN"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());gtag('config','G-QEZQT5MYHN');</script></div></body></html>
