@@ -8,8 +8,6 @@ author: getsolaris
 tags: [Elasticsearch, parent-child, aggs, aggregations]
 ---
 
-## Elasticsearch Parent-child 모델링에서 집계 쿼리 사용하기
-
 Elasticsearch 에서는 집계 (Aggregations) 쿼리를 제공합니다. 
 
 이를 이용하여 데이터를 그룹화하거나 통계를 내는 등 다양한 분석을 수행할 수 있습니다. 
