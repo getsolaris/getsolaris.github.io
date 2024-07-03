@@ -40,6 +40,9 @@ PUT _ingest/pipeline/create-timestamp-pipeline
 
 Ingest pipeline 은 Kibana 의 Stack Management > Ingest Pipelines 에서 생성 및 관리가 가능합니다.
 
+![1](https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2024-07-03-elasticsearch-ingest-pipeline-2way/1.png)
+
+
 생성을 했다면 이제 데이터를 색인할 때 Ingest pipeline 을 사용하여 데이터를 전처리할 수 있습니다.
 
 
