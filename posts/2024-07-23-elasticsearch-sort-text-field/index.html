@@ -1,0 +1,116 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Elasticsearch 문자 정렬 - getsolaris</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Elasticsearch date 타입 필드가 아닌 문자 (text/keyword) 타입의 필드를 정렬하는 방법"><meta property="og:image" content><meta property="og:title" content="Elasticsearch 문자 정렬"><meta property="og:description" content="Elasticsearch date 타입 필드가 아닌 문자 (text/keyword) 타입의 필드를 정렬하는 방법"><meta property="og:type" content="article"><meta property="og:url" content="https://getsolaris.kr/posts/2024-07-23-elasticsearch-sort-text-field/"><meta property="article:published_time" content="2024-07-24T00:00:00+00:00"><meta property="article:modified_time" content="2024-07-24T00:00:00+00:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Elasticsearch 문자 정렬"><meta name=twitter:description content="Elasticsearch date 타입 필드가 아닌 문자 (text/keyword) 타입의 필드를 정렬하는 방법"><script src=https://getsolaris.krjs/feather.min.js></script><link href=https://getsolaris.kr/css/fonts.b685ac6f654695232de7b82a9143a46f9e049c8e3af3a21d9737b01f4be211d1.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=https://getsolaris.kr/css/main.14253267cc610757ce1a4fac8ce2f0c8e7436b11055452ada0aa470e49ea67d5.css><link id=darkModeStyle rel=stylesheet type=text/css href=https://getsolaris.kr/css/dark.f3a01c29baa85933d72cc9a4c907ef9d16c8b826da0e69f3a3466432dea0d176.css disabled></head><body><div class=content><header><div class=main><a href=https://getsolaris.kr>getsolaris</a></div><nav><a href=/>home</a>
+<a href=/about>about</a>
+<a href=https://github.com/getsolaris>github</a></nav></header><main><article><div class=title><h1 class=title>Elasticsearch 문자 정렬</h1><div class=meta></div></div><section class=body><p>사이드 프로젝트를 진행하며, 기존 날짜 타입 필드가 아닌 문자 필드를 정렬 할 일이 생겼습니다.</p><p>예를 들어 Y-m-d 형식의 date 타입인 필드를 정렬하고자 합니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;mapping&#34;</span>: {
+    <span style=color:#f92672>&#34;properties&#34;</span>: {
+      <span style=color:#f92672>&#34;date&#34;</span>: {
+        <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;date&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div><p>그렇다면 아래의 쿼리로 쉽게 정렬할 수 있습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;query&#34;</span>: {
+    <span style=color:#f92672>&#34;match_all&#34;</span>: {}
+  },
+  <span style=color:#f92672>&#34;sort&#34;</span>: [
+    {
+      <span style=color:#f92672>&#34;date&#34;</span>: {
+        <span style=color:#f92672>&#34;order&#34;</span>: <span style=color:#e6db74>&#34;asc&#34;</span>
+      }
+    }
+  ]
+}
+</code></pre></div><p>하지만, 문자 타입의 필드를 정렬하고자 한다면..</p><p>가상으로 <code>nameEN</code> 의 필드를 가진 인덱스를 생성하고, <code>nameEN</code> 필드를 정렬하고자 합니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;mapping&#34;</span>: {
+    <span style=color:#f92672>&#34;properties&#34;</span>: {
+      <span style=color:#f92672>&#34;nameEN&#34;</span>: {
+        <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;text&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div><p>우리는 <code>nameEN</code> 의 첫 글자를 기준으로 정렬하고자 합니다.
+A-Z 순서로 정렬하고자 한다면, 아래와 같이 쿼리를 작성할 수 있습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;query&#34;</span>: {
+    <span style=color:#f92672>&#34;match_all&#34;</span>: {}
+  },
+  <span style=color:#f92672>&#34;sort&#34;</span>: [
+    {
+      <span style=color:#f92672>&#34;nameEN&#34;</span>: {
+        <span style=color:#f92672>&#34;order&#34;</span>: <span style=color:#e6db74>&#34;asc&#34;</span>
+      }
+    }
+  ]
+}
+</code></pre></div><p>하지만, ES 에서는 오류를 반환합니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;illegal_argument_exception&#34;</span>,
+  <span style=color:#f92672>&#34;reason&#34;</span>: <span style=color:#e6db74>&#34;Fielddata is disabled on text fields by default. Set fielddata=true on [nameEN] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory.&#34;</span>
+}
+</code></pre></div><p>그 이유는, text 타입의 필드는 기본적으로 <code>fielddata</code> 옵션이 비활성화 되어 있기 때문입니다.</p><blockquote><p><code>fielddata</code> 란 역색인된 인덱스를 메모리에 로드하여 검색을 빠르게 하는 기능입니다.</p></blockquote><p><code>fielddata</code> 를 활성화 하면, 메모리를 많이 사용하게 되므로, text 타입의 필드를 정렬할 때는 다른 방법을 사용해야 합니다.</p><p>그 방법은 간단하게 해결 가능합니다.</p><p>바로 <code>keyword</code> 타입으로 맵핑하는 것입니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;mapping&#34;</span>: {
+    <span style=color:#f92672>&#34;properties&#34;</span>: {
+      <span style=color:#f92672>&#34;nameEN&#34;</span>: {
+        <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;keyword&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div><p><code>keyword</code> 타입은 <code>fielddata</code> 가 아닌 <code>doc_values</code> 를 사용합니다.</p><blockquote><p><code>doc_values</code> 는 역색인된 인덱스를 디스크에 저장하는 방식입니다.</p></blockquote><p>그리고, 쿼리를 아래와 같이 작성하면 정상적으로 정렬이 됩니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;query&#34;</span>: {
+    <span style=color:#f92672>&#34;match_all&#34;</span>: {}
+  },
+  <span style=color:#f92672>&#34;sort&#34;</span>: [
+    {
+      <span style=color:#f92672>&#34;nameEN&#34;</span>: {
+        <span style=color:#f92672>&#34;order&#34;</span>: <span style=color:#e6db74>&#34;asc&#34;</span>
+      }
+    }
+  ]
+}
+</code></pre></div><p>하지만 우리가 원하는 검색을 하기 위해서는 <code>keyword</code> 로만은 부족합니다.</p><p>여러 analyzer 도 붙여 검색을 하고자 한다면, <code>text</code> 타입으로 맵핑해야 합니다.</p><p>그럼.. <code>text</code> 타입과 <code>keyword</code> 타입을 동시에 사용하는 방법은 없을까 ..</p><h2 id=다중-필드-multi-fields>다중 필드 (multi fields)</h2><p>바로 다중 필드 (multi fields) 를 사용하여 맵핑을 설정하면 됩니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;mapping&#34;</span>: {
+    <span style=color:#f92672>&#34;properties&#34;</span>: {
+      <span style=color:#f92672>&#34;nameEN&#34;</span>: {
+        <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;text&#34;</span>,
+        <span style=color:#f92672>&#34;fields&#34;</span>: {
+          <span style=color:#f92672>&#34;keyword&#34;</span>: {
+            <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;keyword&#34;</span>
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre></div><p>아래와 같이 다중 필드를 이용해 여러개의 analyzer 를 사용할 수도 있습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;mapping&#34;</span>: {
+    <span style=color:#f92672>&#34;properties&#34;</span>: {
+      <span style=color:#f92672>&#34;nameEN&#34;</span>: {
+        <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;text&#34;</span>,
+        <span style=color:#f92672>&#34;fields&#34;</span>: {
+          <span style=color:#f92672>&#34;keyword&#34;</span>: {
+            <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;keyword&#34;</span>
+          },
+          <span style=color:#f92672>&#34;ngram&#34;</span>: {
+            <span style=color:#f92672>&#34;type&#34;</span>: <span style=color:#e6db74>&#34;text&#34;</span>,
+            <span style=color:#f92672>&#34;analyzer&#34;</span>: <span style=color:#e6db74>&#34;ngram_analyzer&#34;</span>
+          }
+        }
+      }
+    }
+  }
+}
+</code></pre></div><p>이렇게 검색은 <code>text</code> 타입으로 하고, 정렬은 <code>keyword</code> 타입으로 할 수 있습니다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>{
+  <span style=color:#f92672>&#34;query&#34;</span>: {
+    <span style=color:#f92672>&#34;match_all&#34;</span>: {}
+  },
+  <span style=color:#f92672>&#34;sort&#34;</span>: [
+    {
+      <span style=color:#f92672>&#34;nameEN.keyword&#34;</span>: {
+        <span style=color:#f92672>&#34;order&#34;</span>: <span style=color:#e6db74>&#34;asc&#34;</span>
+      }
+    }
+  ]
+}
+</code></pre></div><h2 id=ref>Ref</h2><ul><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/sort-search-results.html>Elasticsearch Sorting</a></li><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/doc-values.html>Elasticsearch doc_values</a></li><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/fielddata.html>Elasticsearch fielddata</a></li><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html>Elasticsearch Multi Fields</a></li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/elasticsearch>Elasticsearch</a></li><li><a href=/tags/sort>sort</a></li></ul></nav></div></article></main><footer></footer><script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZQT5MYHN"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('js',new Date());gtag('config','G-QEZQT5MYHN');</script></div></body></html>
