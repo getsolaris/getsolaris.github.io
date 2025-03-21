@@ -98,17 +98,17 @@ PUT posts.v8-rollover-000001
 Elasticsearch의 Rollover 기능을 적용했을 때, 롤오버 후 기존 문서 업데이트가 정상적으로 동작하지 않는 문제가 발생했다.
 
 
-<img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/refs/heads/main/images/2025-03-21-elasticsearch-large-index-rollover-split/1.png">
+![1](https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/1.png)
 
 posts-000001 인덱스에 document_id: p123123 문서가 삽입됨.
 
-<img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/refs/heads/main/images/2025-03-21-elasticsearch-large-index-rollover-split/2.png">
+![1](https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/2.png)
 
 데이터가 증가하면서 Rollover 발생, 새로운 인덱스 posts-000002가 생성됨.
 
 이때 alias 는 동일하지만 is_write_index 가 false로 변경되어 새로운 인덱스로 색인이 이루어짐.
 
-<img src="https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/refs/heads/main/images/2025-03-21-elasticsearch-large-index-rollover-split/3.png">
+![1](https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/3.png)
 이후 posts-000003 인덱스가 추가로 생성됨. 
 
 document_id: p123123 문서를 업데이트하려고 하면, 기존 posts-000001 인덱스에서 업데이트되지 않고 새로운 posts-000003 인덱스에 새로운 문서로 삽입됨.
