@@ -9,7 +9,7 @@
     &#34;indices.lifecycle.poll_interval&#34;: &#34;10s&#34;
   }
 }
-</code></pre></div><h3 id=ilm-정책-작성-30gb-기준-rollover-적용>ILM 정책 작성 (30GB 기준 Rollover 적용)</h3><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT _ilm/policy/post-rollover-ilm-policy
+</code></pre></div><h3 id=ilm-정책-작성-30gb-기준-rollover-적용>ILM 정책 작성 (30GB 기준 Rollover 적용)</h3><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT _ilm/policy/test-rollover-ilm-policy
 {
   &#34;policy&#34;: {
     &#34;phases&#34;: {
@@ -23,27 +23,27 @@
     }
   }
 }
-</code></pre></div><ul><li>hot phase: 인덱스가 활성 상태에서 색인/검색이 이루어지는 단계</li><li>max_size: 인덱스 크기가 30GB를 초과할 때 새로운 인덱스로 자동 롤오버</li></ul><h3 id=index-template-생성>Index Template 생성</h3><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT _template/posts.v8-rollover
+</code></pre></div><ul><li>hot phase: 인덱스가 활성 상태에서 색인/검색이 이루어지는 단계</li><li>max_size: 인덱스 크기가 30GB를 초과할 때 새로운 인덱스로 자동 롤오버</li></ul><h3 id=index-template-생성>Index Template 생성</h3><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT _template/test-rollover
 {
-  &#34;index_patterns&#34;: [&#34;posts.v8-rollover-*&#34;],
+  &#34;index_patterns&#34;: [&#34;test-rollover-*&#34;],
   &#34;settings&#34;: {
-    &#34;index.lifecycle.name&#34;: &#34;posts.v8-rollover-ilm-policy&#34;,
-    &#34;index.lifecycle.rollover_alias&#34;: &#34;posts.v8-rollover&#34;,
+    &#34;index.lifecycle.name&#34;: &#34;test-rollover-ilm-policy&#34;,
+    &#34;index.lifecycle.rollover_alias&#34;: &#34;test-rollover&#34;,
     &#34;number_of_shards&#34;: 18,
     &#34;number_of_replicas&#34;: 1
   }
 }
-</code></pre></div><ul><li>index_patterns: posts.v8-rollover-* 패턴을 따르는 인덱스에 정책 적용</li><li>index.lifecycle.name: 위에서 생성한 ILM 정책 사용</li><li>index.lifecycle.rollover_alias: Rollover 발생 시 사용할 인덱스 별칭 지정</li></ul><h3 id=초기-인덱스-및-alias-설정>초기 인덱스 및 alias 설정</h3><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT posts.v8-rollover-000001
+</code></pre></div><ul><li>index_patterns: test-rollover-* 패턴을 따르는 인덱스에 정책 적용</li><li>index.lifecycle.name: 위에서 생성한 ILM 정책 사용</li><li>index.lifecycle.rollover_alias: Rollover 발생 시 사용할 인덱스 별칭 지정</li></ul><h3 id=초기-인덱스-및-alias-설정>초기 인덱스 및 alias 설정</h3><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback>PUT test-rollover-000001
 {
   &#34;aliases&#34;: {
-    &#34;posts.v8-rollover&#34;: {
+    &#34;test-rollover&#34;: {
       &#34;is_write_index&#34;: true
     }
   }
 }
-</code></pre></div><h2 id=rollover-테스트-중-발생한-문제>Rollover 테스트 중 발생한 문제</h2><p>Elasticsearch의 Rollover 기능을 적용했을 때, 롤오버 후 기존 문서 업데이트가 정상적으로 동작하지 않는 문제가 발생했다.</p><p><img src=https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/1.png alt=1></p><p>posts-000001 인덱스에 document_id: p123123 문서가 삽입됨.</p><p><img src=https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/2.png alt=1></p><p>데이터가 증가하면서 Rollover 발생, 새로운 인덱스 posts-000002가 생성됨.</p><p>이때 alias 는 동일하지만 is_write_index 가 false로 변경되어 새로운 인덱스로 색인이 이루어짐.</p><p><img src=https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/3.png alt=1>
-이후 posts-000003 인덱스가 추가로 생성됨.</p><p>document_id: p123123 문서를 업데이트하려고 하면, 기존 posts-000001 인덱스에서 업데이트되지 않고 새로운 posts-000003 인덱스에 새로운 문서로 삽입됨.</p><p>결과적으로 중복 문서가 생성되면서 데이터 정합성이 깨지고, 검색 성능 저하로 이어졌다.</p><h2 id=ilm의-rollover-를-하면서-배운-점>ILM의 Rollover 를 하면서 배운 점</h2><p>ILM의 Rollover 기능은 로그성 데이터처럼 업데이트가 발생하지 않는 인덱스에만 적합하다.하지만 게시글 데이터는 기존 문서의 업데이트가 빈번하게 발생하기 때문에, Rollover 적용 시 정상적인 업데이트가 불가능했다.</p><h2 id=index-template--mod-기반-인덱싱-전략>Index Template + MOD 기반 인덱싱 전략</h2><p>ILM Rollover를 포기하고, Index Template을 활용하여 특정 네이밍 패턴을 가진 인덱스를 자동 생성하도록 변경했다.</p><ul><li>새로운 인덱스는 posts.v7-2025-N 형식으로 생성됨.</li><li>색인 시 인덱스를 명시적으로 posts.v7-2025-N으로 지정하여 문서 업데이트가 항상 동일한 인덱스에서 이루어지도록 강제.</li></ul><h3 id=mod-연산을-이용한-인덱스-분할>MOD 연산을 이용한 인덱스 분할</h3><p>인덱스 관리를 효율적으로 하기 위해 MOD 연산을 사용하여 특정 인덱스에 색인되도록 설정했다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-javascript data-lang=javascript><span style=color:#75715e>// 이해를 돕기 위해 간단한 예시로 설명
+</code></pre></div><h2 id=rollover-테스트-중-발생한-문제>Rollover 테스트 중 발생한 문제</h2><p>Elasticsearch의 Rollover 기능을 적용했을 때, 롤오버 후 기존 문서 업데이트가 정상적으로 동작하지 않는 문제가 발생했다.</p><p><img src=https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/1.png alt=1></p><p>test-000001 인덱스에 document_id: p123123 문서가 삽입됨.</p><p><img src=https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/2.png alt=1></p><p>데이터가 증가하면서 Rollover 발생, 새로운 인덱스 test-000002가 생성됨.</p><p>이때 alias 는 동일하지만 is_write_index 가 false로 변경되어 새로운 인덱스로 색인이 이루어짐.</p><p><img src=https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/main/images/2025-03-21-elasticsearch-large-index-rollover-split/3.png alt=1>
+이후 test-000003 인덱스가 추가로 생성됨.</p><p>document_id: p123123 문서를 업데이트하려고 하면, 기존 test-000001 인덱스에서 업데이트되지 않고 새로운 test-000003 인덱스에 새로운 문서로 삽입됨.</p><p>결과적으로 중복 문서가 생성되면서 데이터 정합성이 깨지고, 검색 성능 저하로 이어졌다.</p><h2 id=ilm의-rollover-를-하면서-배운-점>ILM의 Rollover 를 하면서 배운 점</h2><p>ILM의 Rollover 기능은 로그성 데이터처럼 업데이트가 발생하지 않는 인덱스에만 적합하다.하지만 게시글 데이터는 기존 문서의 업데이트가 빈번하게 발생하기 때문에, Rollover 적용 시 정상적인 업데이트가 불가능했다.</p><h2 id=index-template--mod-기반-인덱싱-전략>Index Template + MOD 기반 인덱싱 전략</h2><p>ILM Rollover를 포기하고, Index Template을 활용하여 특정 네이밍 패턴을 가진 인덱스를 자동 생성하도록 변경했다.</p><ul><li>새로운 인덱스는 test-2025-N 형식으로 생성됨.</li><li>색인 시 인덱스를 명시적으로 test-2025-N으로 지정하여 문서 업데이트가 항상 동일한 인덱스에서 이루어지도록 강제.</li></ul><h3 id=mod-연산을-이용한-인덱스-분할>MOD 연산을 이용한 인덱스 분할</h3><p>인덱스 관리를 효율적으로 하기 위해 MOD 연산을 사용하여 특정 인덱스에 색인되도록 설정했다.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-javascript data-lang=javascript><span style=color:#75715e>// 이해를 돕기 위해 간단한 예시로 설명
 </span><span style=color:#75715e></span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>indexNumber</span> <span style=color:#f92672>=</span> <span style=color:#a6e22e>document_id</span> <span style=color:#f92672>%</span> <span style=color:#ae81ff>5</span>; <span style=color:#75715e>// 5개의 인덱스로 분할
-</span><span style=color:#75715e></span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>indexName</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`posts.v7-2025-</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>indexNumber</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>;
+</span><span style=color:#75715e></span><span style=color:#66d9ef>const</span> <span style=color:#a6e22e>indexName</span> <span style=color:#f92672>=</span> <span style=color:#e6db74>`test-2025-</span><span style=color:#e6db74>${</span><span style=color:#a6e22e>indexNumber</span><span style=color:#e6db74>}</span><span style=color:#e6db74>`</span>;
 </code></pre></div><ul><li>문서의 ID 값을 특정 숫자로 나눈 나머지를 기준으로 인덱스를 지정</li><li>예를 들어, MOD(document_id, 70) 값을 사용하면 70개의 인덱스로 분산할 수 있음</li><li>같은 document_id는 항상 동일한 인덱스로 매핑되므로 업데이트 시에도 일관성 유지</li></ul><h2 id=최종>최종</h2><p>ILM의 Rollover 기능은 업데이트가 발생하는 데이터에는 적합하지 않다.로그성 데이터가 아니라면, Index Template과 MOD 연산을 이용한 인덱싱 전략이 더 효과적이다.</p><p>이를 통해 Elasticsearch의 성능을 최적화하면서 데이터 정합성을 유지할 수 있었다.</p><h2 id=reference>Reference</h2><ul><li><a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-rollover.html>https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-rollover.html</a></li><li><a href=https://lasel.kr/archives/604>https://lasel.kr/archives/604</a></li><li><a href=https://discuss.elastic.co/t/ilm-rollover-not-working-on-max-size/287999>https://discuss.elastic.co/t/ilm-rollover-not-working-on-max-size/287999</a></li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/elasticsearch>Elasticsearch</a></li><li><a href=/tags/rollover>rollover</a></li><li><a href=/tags/ilm>ilm</a></li></ul></nav></div></article></main><footer></footer><script async src="https://www.googletagmanager.com/gtag/js?id=G-QEZQT5MYHN"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
 gtag('js',new Date());gtag('config','G-QEZQT5MYHN');</script></div></body></html>
