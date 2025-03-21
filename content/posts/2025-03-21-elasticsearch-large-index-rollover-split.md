@@ -135,7 +135,7 @@ const indexName = `test-2025-${indexNumber}`;
 ```
 
 - 문서의 ID 값을 특정 숫자로 나눈 나머지를 기준으로 인덱스를 지정
-- 예를 들어, MOD(document_id, 70) 값을 사용하면 70개의 인덱스로 분산할 수 있음 
+- 예를 들어, MOD(document_id, 5) 값을 사용하면 5개의 인덱스로 분산할 수 있음 
 - 같은 document_id는 항상 동일한 인덱스로 매핑되므로 업데이트 시에도 일관성 유지
 
 
