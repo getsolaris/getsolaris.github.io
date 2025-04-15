@@ -17,8 +17,7 @@ tags: [elastic, contributor]
 ![1](https://raw.githubusercontent.com/getsolaris/getsolaris.github.io/refs/heads/main/images/2025-04-15-elastic-contributor-silver-2025/1.png)
 
 
-이번에 Elastic Contributor Silver 2025에 선정되는 영광을 얻게 되었습니다.
-
+이번에 Elastic Contributor Silver 2025에 선정이 되었습니다.
 
 ## Elastic Contributor 란 ?
 Elastic Contributor는 Elastic Stack 생태계 발전에 의미 있는 기여자들을 선정하여 다양한 혜택을 제공하는 프로그램입니다.
